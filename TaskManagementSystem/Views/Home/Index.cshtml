@@ -1,0 +1,266 @@
+﻿@model DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="h3 mb-0">
+            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+        </h1>
+        <p class="text-muted mb-0">Welcome to AFPMS Task Management System</p>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Total Tasks
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalTasks</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-tasks fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Pending Tasks
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.PendingTasks</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-clock fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            In Progress
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.InProgressTasks</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-spinner fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Completed
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.CompletedTasks</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Overdue Tasks Alert -->
+@if (Model.OverdueTasks > 0)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <strong>Warning!</strong> You have @Model.OverdueTasks overdue task(s). Please review and update them.
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="row">
+    <!-- Recent Tasks -->
+    <div class="col-lg-6">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-list me-2"></i>Recent Tasks
+                </h6>
+                <a asp-controller="Task" asp-action="Index" class="btn btn-sm btn-primary">
+                    View All
+                </a>
+            </div>
+            <div class="card-body">
+                @if (Model.RecentTasks.Any())
+                {
+                    <div class="list-group list-group-flush">
+                        @foreach (var task in Model.RecentTasks)
+                        {
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">@task.Title</h6>
+                                    <small class="text-muted">
+                                        <i class="fas fa-calendar me-1"></i>@task.CreatedAt.ToString("MMM dd, yyyy")
+                                    </small>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <span class="badge @GetStatusClass(task.Status) me-2">@task.Status</span>
+                                    <a asp-controller="Task" asp-action="Details" asp-route-id="@task.Id" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted text-center py-3">No recent tasks</p>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Upcoming Deadlines -->
+    <div class="col-lg-6">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-calendar-alt me-2"></i>Upcoming Deadlines
+                </h6>
+                <a asp-controller="Task" asp-action="Index" class="btn btn-sm btn-primary">
+                    View All
+                </a>
+            </div>
+            <div class="card-body">
+                @if (Model.UpcomingDeadlines.Any())
+                {
+                    <div class="list-group list-group-flush">
+                        @foreach (var task in Model.UpcomingDeadlines)
+                        {
+                            var daysUntilDeadline = (task.Deadline - DateTime.Now).Days;
+                            var deadlineClass = daysUntilDeadline <= 1 ? "text-danger" : 
+                                              daysUntilDeadline <= 3 ? "text-warning" : "text-muted";
+                            
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">@task.Title</h6>
+                                    <small class="@deadlineClass">
+                                        <i class="fas fa-clock me-1"></i>
+                                        @if (daysUntilDeadline == 0)
+                                        {
+                                            <span>Due today</span>
+                                        }
+                                        else if (daysUntilDeadline == 1)
+                                        {
+                                            <span>Due tomorrow</span>
+                                        }
+                                        else
+                                        {
+                                            <span>Due in @daysUntilDeadline days</span>
+                                        }
+                                    </small>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <span class="badge @GetPriorityClass(task.Priority) me-2">@task.Priority</span>
+                                    <a asp-controller="Task" asp-action="Details" asp-route-id="@task.Id" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted text-center py-3">No upcoming deadlines</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-bolt me-2"></i>Quick Actions
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <a asp-controller="Task" asp-action="Create" class="btn btn-primary w-100">
+                            <i class="fas fa-plus me-2"></i>Create New Task
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a asp-controller="Task" asp-action="Index" class="btn btn-info w-100">
+                            <i class="fas fa-list me-2"></i>View All Tasks
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a asp-controller="Task" asp-action="Index" asp-route-statusFilter="Pending" class="btn btn-warning w-100">
+                            <i class="fas fa-clock me-2"></i>Pending Tasks
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a asp-controller="Task" asp-action="Index" asp-route-statusFilter="InProgress" class="btn btn-secondary w-100">
+                            <i class="fas fa-spinner me-2"></i>In Progress
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    string GetStatusClass(TaskManagementSystem.Models.TaskStatus status)
+    {
+        return status switch
+        {
+            TaskManagementSystem.Models.TaskStatus.Pending => "bg-secondary",
+            TaskManagementSystem.Models.TaskStatus.InProgress => "bg-primary",
+            TaskManagementSystem.Models.TaskStatus.Done => "bg-success",
+            TaskManagementSystem.Models.TaskStatus.Blocked => "bg-danger",
+            TaskManagementSystem.Models.TaskStatus.Stuck => "bg-warning",
+            _ => "bg-secondary"
+        };
+    }
+    
+    string GetPriorityClass(TaskManagementSystem.Models.TaskPriority priority)
+    {
+        return priority switch
+        {
+            TaskManagementSystem.Models.TaskPriority.Critical => "bg-danger",
+            TaskManagementSystem.Models.TaskPriority.High => "bg-warning",
+            TaskManagementSystem.Models.TaskPriority.Medium => "bg-info",
+            TaskManagementSystem.Models.TaskPriority.Low => "bg-success",
+            _ => "bg-secondary"
+        };
+    }
+}
