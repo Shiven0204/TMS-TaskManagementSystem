@@ -35,6 +35,9 @@ app.UseRouting();
 
 app.UseSession();
 
+// Add session restore middleware for persistent login
+app.UseMiddleware<TaskManagementSystem.SessionRestoreMiddleware>();
+
 app.UseAuthorization();
 
 app.MapStaticAssets();

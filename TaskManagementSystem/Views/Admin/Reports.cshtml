@@ -1,0 +1,75 @@
+@model TaskManagementSystem.Models.ReportsViewModel
+@{
+    ViewData["Title"] = "Reports";
+}
+<h2>Reports Dashboard</h2>
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Total Users</h5>
+                <p class="card-text display-6">@Model.TotalUsers</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Total Tasks</h5>
+                <p class="card-text display-6">@Model.TotalTasks</p>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card mb-3">
+            <div class="card-header bg-secondary text-white">Tasks by Status</div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <thead><tr><th>Status</th><th>Count</th></tr></thead>
+                    <tbody>
+                    @foreach (var item in Model.TasksByStatus)
+                    {
+                        <tr><td>@item.Key</td><td>@item.Value</td></tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card mb-3">
+            <div class="card-header bg-info text-white">Tasks by Category</div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <thead><tr><th>Category</th><th>Count</th></tr></thead>
+                    <tbody>
+                    @foreach (var item in Model.TasksByCategory)
+                    {
+                        <tr><td>@item.Key</td><td>@item.Value</td></tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card mb-3">
+            <div class="card-header bg-dark text-white">Tasks by User</div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <thead><tr><th>User</th><th>Count</th></tr></thead>
+                    <tbody>
+                    @foreach (var item in Model.TasksByUser)
+                    {
+                        <tr><td>@item.Key</td><td>@item.Value</td></tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div> 

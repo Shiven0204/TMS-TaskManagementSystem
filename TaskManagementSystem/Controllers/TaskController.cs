@@ -16,12 +16,32 @@ namespace TaskManagementSystem.Controllers
             _webHostEnvironment = webHostEnvironment;
         }
 
+        private string? GetUserId()
+        {
+            var userId = HttpContext.Session.GetString("UserId");
+            if (!string.IsNullOrEmpty(userId))
+                return userId;
+            // Try cookies
+            if (Request.Cookies.ContainsKey("UserId"))
+            {
+                // Restore session from cookies
+                HttpContext.Session.SetString("UserId", Request.Cookies["UserId"]!);
+                if (Request.Cookies.ContainsKey("Username"))
+                    HttpContext.Session.SetString("Username", Request.Cookies["Username"]!);
+                if (Request.Cookies.ContainsKey("UserRole"))
+                    HttpContext.Session.SetString("UserRole", Request.Cookies["UserRole"]!);
+                if (Request.Cookies.ContainsKey("UserFullName"))
+                    HttpContext.Session.SetString("UserFullName", Request.Cookies["UserFullName"]!);
+                return Request.Cookies["UserId"];
+            }
+            return null;
+        }
+
         // GET: Task
         public async Task<IActionResult> Index(string searchString, string categoryFilter, string statusFilter)
         {
-            var userId = HttpContext.Session.GetString("UserId");
+            var userId = GetUserId();
             var userRole = HttpContext.Session.GetString("UserRole");
-
             if (string.IsNullOrEmpty(userId))
             {
                 return RedirectToAction("Login", "Auth");
@@ -93,7 +113,7 @@ namespace TaskManagementSystem.Controllers
         // GET: Task/Create
         public async Task<IActionResult> Create()
         {
-            var userId = HttpContext.Session.GetString("UserId");
+            var userId = GetUserId();
             if (string.IsNullOrEmpty(userId))
             {
                 return RedirectToAction("Login", "Auth");
@@ -111,59 +131,73 @@ namespace TaskManagementSystem.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(TaskItem task, List<IFormFile> files)
         {
-            var userId = HttpContext.Session.GetString("UserId");
+            TempData["Error"] = "DEBUG: Create POST action was called.";
+            var userId = GetUserId();
             if (string.IsNullOrEmpty(userId))
             {
+                TempData["Error"] = "Your session has expired or you are not logged in. Please log in again.";
                 return RedirectToAction("Login", "Auth");
             }
 
             if (ModelState.IsValid)
             {
-                task.CreatedById = int.Parse(userId);
-                task.CreatedAt = DateTime.Now;
-                task.Status = TaskManagementSystem.Models.TaskStatus.Pending;
-
-                _context.Tasks.Add(task);
-                await _context.SaveChangesAsync();
-
-                // Handle file uploads
-                if (files != null && files.Any())
+                try
                 {
-                    var uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "uploads");
-                    if (!Directory.Exists(uploadsFolder))
-                    {
-                        Directory.CreateDirectory(uploadsFolder);
-                    }
+                    task.CreatedById = int.Parse(userId);
+                    task.CreatedAt = DateTime.Now;
+                    task.Status = TaskManagementSystem.Models.TaskStatus.Pending;
 
-                    foreach (var file in files)
-                    {
-                        if (file.Length > 0)
-                        {
-                            var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
-                            var filePath = Path.Combine(uploadsFolder, fileName);
-
-                            using (var stream = new FileStream(filePath, FileMode.Create))
-                            {
-                                await file.CopyToAsync(stream);
-                            }
-
-                            var taskFile = new TaskFile
-                            {
-                                TaskId = task.Id,
-                                FileName = file.FileName,
-                                ContentType = file.ContentType,
-                                FilePath = fileName,
-                                FileSize = file.Length,
-                                UploadedById = int.Parse(userId)
-                            };
-
-                            _context.TaskFiles.Add(taskFile);
-                        }
-                    }
+                    _context.Tasks.Add(task);
                     await _context.SaveChangesAsync();
-                }
 
-                return RedirectToAction(nameof(Index));
+                    // Handle file uploads
+                    if (files != null && files.Any())
+                    {
+                        var uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "uploads");
+                        if (!Directory.Exists(uploadsFolder))
+                        {
+                            Directory.CreateDirectory(uploadsFolder);
+                        }
+
+                        foreach (var file in files)
+                        {
+                            if (file.Length > 0)
+                            {
+                                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
+                                var filePath = Path.Combine(uploadsFolder, fileName);
+
+                                using (var stream = new FileStream(filePath, FileMode.Create))
+                                {
+                                    await file.CopyToAsync(stream);
+                                }
+
+                                var taskFile = new TaskFile
+                                {
+                                    TaskId = task.Id,
+                                    FileName = file.FileName,
+                                    ContentType = file.ContentType,
+                                    FilePath = fileName,
+                                    FileSize = file.Length,
+                                    UploadedById = int.Parse(userId)
+                                };
+
+                                _context.TaskFiles.Add(taskFile);
+                            }
+                        }
+                        await _context.SaveChangesAsync();
+                    }
+
+                    return RedirectToAction(nameof(Index));
+                }
+                catch (Exception ex)
+                {
+                    TempData["Error"] = "An error occurred while saving the task: " + ex.Message;
+                }
+            }
+            else
+            {
+                var errors = string.Join("; ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+                TempData["Error"] = "ModelState is invalid. Errors: " + errors;
             }
 
             ViewBag.Users = await _context.Users.Where(u => u.IsActive).ToListAsync();
@@ -176,6 +210,12 @@ namespace TaskManagementSystem.Controllers
         // GET: Task/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
+            var userId = GetUserId();
+            if (string.IsNullOrEmpty(userId))
+            {
+                return RedirectToAction("Login", "Auth");
+            }
+
             if (id == null)
             {
                 return NotFound();
@@ -203,15 +243,15 @@ namespace TaskManagementSystem.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, TaskItem task, List<IFormFile> files)
         {
-            if (id != task.Id)
-            {
-                return NotFound();
-            }
-
-            var userId = HttpContext.Session.GetString("UserId");
+            var userId = GetUserId();
             if (string.IsNullOrEmpty(userId))
             {
                 return RedirectToAction("Login", "Auth");
+            }
+
+            if (id != task.Id)
+            {
+                return NotFound();
             }
 
             if (ModelState.IsValid)
@@ -290,6 +330,11 @@ namespace TaskManagementSystem.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
+            else
+            {
+                var errors = string.Join("; ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+                TempData["Error"] = "ModelState is invalid. Errors: " + errors;
+            }
 
             ViewBag.Users = await _context.Users.Where(u => u.IsActive).ToListAsync();
             ViewBag.Categories = Enum.GetValues<TaskCategory>();
@@ -327,7 +372,7 @@ namespace TaskManagementSystem.Controllers
         [HttpPost]
         public async Task<IActionResult> AddUpdate(int taskId, string updateText)
         {
-            var userId = HttpContext.Session.GetString("UserId");
+            var userId = GetUserId();
             if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(updateText))
             {
                 return Json(new { success = false, message = "Invalid request" });

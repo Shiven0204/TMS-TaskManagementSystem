@@ -34,7 +34,7 @@ namespace TaskManagementSystem.Models
         public int? AssignedToId { get; set; }
 
         // Navigation properties
-        public virtual User CreatedBy { get; set; } = null!;
+        public virtual User? CreatedBy { get; set; }
         public virtual User? AssignedTo { get; set; }
         public virtual ICollection<TaskUpdate> Updates { get; set; } = new List<TaskUpdate>();
         public virtual ICollection<TaskFile> Files { get; set; } = new List<TaskFile>();

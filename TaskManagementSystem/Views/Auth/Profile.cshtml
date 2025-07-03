@@ -1,0 +1,16 @@
+@model TaskManagementSystem.Models.User
+@{
+    ViewData["Title"] = "Profile";
+}
+<h2>My Profile</h2>
+<div class="card" style="max-width: 500px;">
+    <div class="card-body">
+        <h4 class="card-title mb-3"><i class="fas fa-user me-2"></i>@Model.FirstName @Model.LastName</h4>
+        <p class="mb-2"><strong>Username:</strong> @Model.Username</p>
+        <p class="mb-2"><strong>Email:</strong> @Model.Email</p>
+        <p class="mb-2"><strong>Role:</strong> @Model.Role</p>
+        <p class="mb-2"><strong>Department:</strong> @Model.Department</p>
+        <p class="mb-2"><strong>Status:</strong> @(Model.IsActive ? "Active" : "Inactive")</p>
+        <p class="mb-2"><strong>Joined:</strong> @Model.CreatedAt.ToString("MMM dd, yyyy")</p>
+    </div>
+</div> 

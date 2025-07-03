@@ -17,9 +17,30 @@ public class HomeController : Controller
         _context = context;
     }
 
-    public async Task<IActionResult> Index()
+    private string? GetUserId()
     {
         var userId = HttpContext.Session.GetString("UserId");
+        if (!string.IsNullOrEmpty(userId))
+            return userId;
+        // Try cookies
+        if (Request.Cookies.ContainsKey("UserId"))
+        {
+            // Restore session from cookies
+            HttpContext.Session.SetString("UserId", Request.Cookies["UserId"]!);
+            if (Request.Cookies.ContainsKey("Username"))
+                HttpContext.Session.SetString("Username", Request.Cookies["Username"]!);
+            if (Request.Cookies.ContainsKey("UserRole"))
+                HttpContext.Session.SetString("UserRole", Request.Cookies["UserRole"]!);
+            if (Request.Cookies.ContainsKey("UserFullName"))
+                HttpContext.Session.SetString("UserFullName", Request.Cookies["UserFullName"]!);
+            return Request.Cookies["UserId"];
+        }
+        return null;
+    }
+
+    public async Task<IActionResult> Index()
+    {
+        var userId = GetUserId();
         if (string.IsNullOrEmpty(userId))
         {
             return RedirectToAction("Login", "Auth");

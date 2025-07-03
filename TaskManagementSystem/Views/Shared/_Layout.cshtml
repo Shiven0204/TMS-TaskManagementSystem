@@ -22,7 +22,12 @@
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
-                        @if (Context.Session.GetString("UserId") != null)
+                        @{
+                            var userId = Context.Session.GetString("UserId") ?? Context.Request.Cookies["UserId"];
+                            var userRole = Context.Session.GetString("UserRole") ?? Context.Request.Cookies["UserRole"];
+                            var userFullName = Context.Session.GetString("UserFullName") ?? Context.Request.Cookies["UserFullName"];
+                        }
+                        @if (userId != null)
                         {
                             <li class="nav-item">
                                 <a class="nav-link text-light" asp-area="" asp-controller="Home" asp-action="Index">
@@ -39,31 +44,31 @@
                                     <i class="fas fa-plus me-1"></i>New Task
                                 </a>
                             </li>
-                            @if (Context.Session.GetString("UserRole") == "Admin")
+                            @if (userRole == "Admin")
                             {
                                 <li class="nav-item dropdown">
                                     <a class="nav-link dropdown-toggle text-light" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                         <i class="fas fa-cog me-1"></i>Admin
                                     </a>
                                     <ul class="dropdown-menu" aria-labelledby="adminDropdown">
-                                        <li><a class="dropdown-item" href="#"><i class="fas fa-users me-2"></i>Manage Users</a></li>
-                                        <li><a class="dropdown-item" href="#"><i class="fas fa-chart-bar me-2"></i>Reports</a></li>
+                                        <li><a class="dropdown-item" asp-controller="Admin" asp-action="ManageUsers"><i class="fas fa-users me-2"></i>Manage Users</a></li>
+                                        <li><a class="dropdown-item" asp-controller="Admin" asp-action="Reports"><i class="fas fa-chart-bar me-2"></i>Reports</a></li>
                                         <li><hr class="dropdown-divider"></li>
-                                        <li><a class="dropdown-item" href="#"><i class="fas fa-cogs me-2"></i>Settings</a></li>
+                                        <li><a class="dropdown-item" asp-controller="Admin" asp-action="Settings"><i class="fas fa-cogs me-2"></i>Settings</a></li>
                                     </ul>
                                 </li>
                             }
                         }
                     </ul>
                     <ul class="navbar-nav">
-                        @if (Context.Session.GetString("UserId") != null)
+                        @if (userId != null)
                         {
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle text-light" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="fas fa-user me-1"></i>@Context.Session.GetString("UserFullName")
+                                    <i class="fas fa-user me-1"></i>@userFullName
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                                    <li><a class="dropdown-item" href="#"><i class="fas fa-user-cog me-2"></i>Profile</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Auth" asp-action="Profile"><i class="fas fa-user-cog me-2"></i>Profile</a></li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li><a class="dropdown-item" asp-area="" asp-controller="Auth" asp-action="Logout">
                                         <i class="fas fa-sign-out-alt me-2"></i>Logout

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using TaskManagementSystem.Data;
 using TaskManagementSystem.Models;
 using BCrypt.Net;
+using Microsoft.AspNetCore.Http;
 
 namespace TaskManagementSystem.Controllers
 {
@@ -15,10 +16,31 @@ namespace TaskManagementSystem.Controllers
             _context = context;
         }
 
+        private string? GetUserId()
+        {
+            var userId = HttpContext.Session.GetString("UserId");
+            if (!string.IsNullOrEmpty(userId))
+                return userId;
+            // Try cookies
+            if (Request.Cookies.ContainsKey("UserId"))
+            {
+                // Restore session from cookies
+                HttpContext.Session.SetString("UserId", Request.Cookies["UserId"]!);
+                if (Request.Cookies.ContainsKey("Username"))
+                    HttpContext.Session.SetString("Username", Request.Cookies["Username"]!);
+                if (Request.Cookies.ContainsKey("UserRole"))
+                    HttpContext.Session.SetString("UserRole", Request.Cookies["UserRole"]!);
+                if (Request.Cookies.ContainsKey("UserFullName"))
+                    HttpContext.Session.SetString("UserFullName", Request.Cookies["UserFullName"]!);
+                return Request.Cookies["UserId"];
+            }
+            return null;
+        }
+
         [HttpGet]
         public IActionResult Login()
         {
-            if (HttpContext.Session.GetString("UserId") != null)
+            if (GetUserId() != null)
             {
                 return RedirectToAction("Index", "Home");
             }
@@ -26,7 +48,7 @@ namespace TaskManagementSystem.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Login(string username, string password)
+        public async Task<IActionResult> Login(string username, string password, bool rememberMe)
         {
             if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
             {
@@ -43,11 +65,28 @@ namespace TaskManagementSystem.Controllers
                 return View();
             }
 
-            // Set session
+            // Always set session
             HttpContext.Session.SetString("UserId", user.Id.ToString());
             HttpContext.Session.SetString("Username", user.Username);
             HttpContext.Session.SetString("UserRole", user.Role.ToString());
             HttpContext.Session.SetString("UserFullName", $"{user.FirstName} {user.LastName}");
+
+            // Always set cookies (with expiry if rememberMe, session cookie if not)
+            var cookieOptions = new CookieOptions
+            {
+                Path = "/",
+                HttpOnly = true,
+                IsEssential = true,
+                SameSite = SameSiteMode.Lax
+            };
+            if (rememberMe)
+            {
+                cookieOptions.Expires = DateTimeOffset.UtcNow.AddDays(30);
+            }
+            Response.Cookies.Append("UserId", user.Id.ToString(), cookieOptions);
+            Response.Cookies.Append("Username", user.Username, cookieOptions);
+            Response.Cookies.Append("UserRole", user.Role.ToString(), cookieOptions);
+            Response.Cookies.Append("UserFullName", $"{user.FirstName} {user.LastName}", cookieOptions);
 
             return RedirectToAction("Index", "Home");
         }
@@ -56,13 +95,18 @@ namespace TaskManagementSystem.Controllers
         public IActionResult Logout()
         {
             HttpContext.Session.Clear();
+            // Remove persistent cookies
+            Response.Cookies.Delete("UserId");
+            Response.Cookies.Delete("Username");
+            Response.Cookies.Delete("UserRole");
+            Response.Cookies.Delete("UserFullName");
             return RedirectToAction("Login");
         }
 
         [HttpGet]
         public IActionResult Register()
         {
-            if (HttpContext.Session.GetString("UserId") != null)
+            if (GetUserId() != null)
             {
                 return RedirectToAction("Index", "Home");
             }
@@ -111,6 +155,16 @@ namespace TaskManagementSystem.Controllers
             }
 
             return View(model);
+        }
+
+        public async Task<IActionResult> Profile()
+        {
+            var userId = GetUserId();
+            if (string.IsNullOrEmpty(userId))
+                return RedirectToAction("Login");
+            var user = await _context.Users.FindAsync(int.Parse(userId));
+            if (user == null) return NotFound();
+            return View(user);
         }
     }
 } 
