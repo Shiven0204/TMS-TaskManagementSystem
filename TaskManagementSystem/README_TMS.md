@@ -49,7 +49,7 @@ TaskManagementSystem/
 ### 2️⃣ Clone the repository
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/Shiven0204/TMS-TaskManagementSystem.git
 cd TaskManagementSystem
 ```
 
