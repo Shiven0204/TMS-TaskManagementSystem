@@ -50,7 +50,7 @@
                         </div>
                         <div class="mb-3">
                             <strong><i class="fas fa-user me-2"></i>Created by:</strong>
-                            <span>@Model.CreatedBy.FirstName @Model.CreatedBy.LastName</span>
+                            <span>@(Model.CreatedBy == null ? "Unknown" : $"{Model.CreatedBy.FirstName} {Model.CreatedBy.LastName}")</span>
                         </div>
                         @if (Model.AssignedTo != null)
                         {

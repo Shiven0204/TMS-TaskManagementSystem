@@ -97,7 +97,8 @@
                     
                     <div class="mb-3">
                         <small class="text-muted">
-                            <i class="fas fa-user me-1"></i>Created by: @task.CreatedBy.FirstName @task.CreatedBy.LastName
+                            <i class="fas fa-user me-1"></i>Created by:
+                            @(task.CreatedBy == null ? "Unknown" : $"{task.CreatedBy.FirstName} {task.CreatedBy.LastName}")
                         </small>
                     </div>
                     

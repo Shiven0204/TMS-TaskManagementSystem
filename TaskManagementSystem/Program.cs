@@ -1,14 +1,27 @@
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using TaskManagementSystem.Data;
+using TaskManagementSystem.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
-// Add Entity Framework
+// Add Entity Framework (configurable provider)
+var databaseProvider = builder.Configuration.GetValue<string>("DatabaseProvider");
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+{
+    if (string.Equals(databaseProvider, "Sqlite", StringComparison.OrdinalIgnoreCase))
+    {
+        options.UseSqlite(connectionString);
+    }
+    else
+    {
+        options.UseSqlServer(connectionString);
+    }
+});
 
 // Add Session
 builder.Services.AddSession(options =>
@@ -47,11 +60,42 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
 
-// Ensure database is created
-// using (var scope = app.Services.CreateScope())
-// {
-//     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-//     context.Database.EnsureCreated();
-// }
+// Ensure database exists and apply migrations
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    if (string.Equals(databaseProvider, "Sqlite", StringComparison.OrdinalIgnoreCase))
+    {
+        context.Database.EnsureCreated();
+    }
+    else
+    {
+        try
+        {
+            context.Database.Migrate();
+        }
+        catch (SqlException ex) when (ex.Number == 1801)
+        {
+            // Database already exists (can happen with parallel startups)
+        }
+    }
+
+    if (!context.Users.Any(u => u.Username == "admin2"))
+    {
+        context.Users.Add(new User
+        {
+            Username = "admin2",
+            Email = "admin2@afpms.com",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin1234"),
+            FirstName = "System",
+            LastName = "Administrator",
+            Role = UserRole.Admin,
+            Department = "IT",
+            CreatedAt = DateTime.UtcNow,
+            IsActive = true
+        });
+        context.SaveChanges();
+    }
+}
 
 app.Run();
