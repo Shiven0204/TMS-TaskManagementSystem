@@ -9,8 +9,21 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 
 // Add Entity Framework (configurable provider)
-var databaseProvider = builder.Configuration.GetValue<string>("DatabaseProvider");
+var databaseProvider = builder.Configuration.GetValue<string>("DatabaseProvider") ?? "Sqlite";
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+if (string.IsNullOrWhiteSpace(connectionString))
+{
+    throw new InvalidOperationException(
+        "ConnectionStrings:DefaultConnection must be configured before starting the application.");
+}
+
+if (!string.Equals(databaseProvider, "Sqlite", StringComparison.OrdinalIgnoreCase) &&
+    !string.Equals(databaseProvider, "SqlServer", StringComparison.OrdinalIgnoreCase))
+{
+    throw new InvalidOperationException(
+        $"Unsupported DatabaseProvider '{databaseProvider}'. Use 'Sqlite' or 'SqlServer'.");
+}
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
     if (string.Equals(databaseProvider, "Sqlite", StringComparison.OrdinalIgnoreCase))
@@ -66,6 +79,8 @@ using (var scope = app.Services.CreateScope())
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     if (string.Equals(databaseProvider, "Sqlite", StringComparison.OrdinalIgnoreCase))
     {
+        // Keep EnsureCreated for the existing local SQLite database, which was
+        // created without an EF migrations history.
         context.Database.EnsureCreated();
     }
     else

@@ -1,94 +1,73 @@
-# 📌 Task Management System (TMS)
+# Task Management System
 
-A web-based Task Management System built using **.NET**, designed to help users efficiently manage tasks with features like task creation, status tracking, and user management.
+A server-rendered ASP.NET Core MVC application for managing users, tasks, updates, files, reminders, and reports.
 
----
+## Requirements
 
-## 🚀 Features
+- .NET SDK 10.0.100 or later
+- Visual Studio 2022 (17.14 or later) or VS Code with the C# Dev Kit
 
-✅ Create, update, and delete tasks  
-✅ Track task statuses (e.g., pending, in progress, completed)  
-✅ User authentication and session management  
-✅ Middleware-based session restoration (`SessionRestoreMiddleware`)  
-✅ Configuration via `appsettings.json`  
-✅ Clean MVC architecture with dependency injection
+The project targets `net10.0` and uses Entity Framework Core 10.
 
----
+## Run locally
 
-## 🛠️ Technologies Used
+From the directory containing `TaskManagementSystem.csproj`:
 
-- **.NET 7/8** (verify your actual .NET version)
-- **C#**
-- ASP.NET Core MVC/Web API
-- Entity Framework Core (if used – you can add this if relevant)
-- SQL Server (if applicable)
-
----
-
-## 📂 Project Structure
-
-```
-TaskManagementSystem/
-├── Program.cs                  # App entry point
-├── SessionRestoreMiddleware.cs # Custom middleware for restoring sessions
-├── appsettings.json            # App configuration
-├── TaskManagementSystem.csproj # Project file
-├── TaskManagementSystem.sln    # Solution file
-└── wwwroot/                    # Static files (if any)
-```
-
----
-
-## ⚙️ Getting Started
-
-### 1️⃣ Prerequisites
-
-- [.NET SDK](https://dotnet.microsoft.com/download) (7.0 or newer)
-- Visual Studio / VS Code
-
-### 2️⃣ Clone the repository
-
-```bash
-git clone https://github.com/Shiven0204/TMS-TaskManagementSystem.git
-cd TaskManagementSystem
-```
-
-### 3️⃣ Restore dependencies
-
-```bash
+```powershell
 dotnet restore
-```
-
-### 4️⃣ Build the project
-
-```bash
 dotnet build
-```
-
-### 5️⃣ Run the application
-
-```bash
 dotnet run
 ```
 
-The application will start on `https://localhost:5001` (or the port configured in `launchSettings.json`).
+The development launch profile listens on:
 
----
+- HTTP: http://localhost:5209
+- HTTPS: https://localhost:7059
 
-## 🖥️ Usage
+Open either address in a browser. The default local database is SQLite and is
+created at `taskmanagement.db` on first start.
 
-- Open your browser and navigate to `https://localhost:5001`.
-- Log in (if authentication is implemented).
-- Create, update, and track your tasks through the web interface.
+The application creates a development administrator when the database does not
+already contain `admin2`:
 
----
+| Username | Password |
+| --- | --- |
+| `admin2` | `admin1234` |
 
-## 📝 Configuration
+Change this password before using the application outside local development.
 
-Modify **appsettings.json** to update settings like database connection strings, app URLs, logging levels, etc.
+## Configuration
 
----
+The default configuration in `appsettings.json` is:
 
-## 🤝 Contributing
+```json
+{
+  "DatabaseProvider": "Sqlite",
+  "ConnectionStrings": {
+    "DefaultConnection": "Data Source=taskmanagement.db"
+  }
+}
+```
 
-Pull requests are welcome! For major changes, please open an issue first to discuss what you’d like to change.
+To use SQL Server, set `DatabaseProvider` to `SqlServer` and provide a valid
+`ConnectionStrings:DefaultConnection` value. Environment variables use the
+double-underscore form:
+
+```powershell
+$env:DatabaseProvider = "SqlServer"
+$env:ConnectionStrings__DefaultConnection = "Server=localhost;Database=TaskManagementSystem;Trusted_Connection=True;TrustServerCertificate=True"
+dotnet run
+```
+
+The SQL Server provider applies EF Core migrations at startup. SQLite uses
+`EnsureCreated` to remain compatible with the existing local database file.
+Delete `taskmanagement.db` only when you intentionally want to reset local
+data.
+
+## Features
+
+- User registration, login, logout, and profile pages
+- Role-aware task dashboard for administrators, team leads, and staff
+- Task creation, editing, status tracking, reminders, updates, and file attachments
+- Administrative user management, settings, and reports
+- SQLite for zero-configuration local development, with SQL Server support
